@@ -8,6 +8,16 @@
   <title>ANEF Stats — Délais de naturalisation française 2025-2026</title>
   <meta name="description" content="Analysez les délais de naturalisation française : durée par étape, temps moyen de traitement SDANF/SCEC, calendrier des décrets. Statistiques actualisées.">
   <link rel="canonical" href="https://letranger-dev.github.io/anef-extension/delais.html">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('anef-theme');
+        var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var theme = saved || (prefersLight ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="shared/common.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -15,13 +25,13 @@
       theme: {
         extend: {
           colors: {
-            bg: '#0f172a',
-            'bg-card': '#1e293b',
-            'bg-hover': '#334155',
-            border: '#334155',
-            'text-main': '#e2e8f0',
-            'text-muted': '#94a3b8',
-            'text-dim': '#64748b',
+            bg: 'rgb(var(--bg-rgb) / <alpha-value>)',
+            'bg-card': 'rgb(var(--bg-card-rgb) / <alpha-value>)',
+            'bg-hover': 'rgb(var(--bg-hover-rgb) / <alpha-value>)',
+            border: 'rgb(var(--border-rgb) / <alpha-value>)',
+            'text-main': 'rgb(var(--text-main-rgb) / <alpha-value>)',
+            'text-muted': 'rgb(var(--text-muted-rgb) / <alpha-value>)',
+            'text-dim': 'rgb(var(--text-dim-rgb) / <alpha-value>)',
             primary: '#3b82f6',
             'primary-light': '#60a5fa',
             success: '#10b981',

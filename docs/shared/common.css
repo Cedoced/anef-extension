@@ -4,25 +4,98 @@
    This file handles: components created by JS (pills, cards, tables…)
    ───────────────────────────────────────────────────────────── */
 
-/* ─── CSS Variables (shared with Tailwind config) ──────────── */
+/* ─── CSS Variables (shared with Tailwind config) ───────────────
+   Theming guidelines:
+   - *-rgb tokens hold "R G B" triplets (no rgb() wrapper) so the
+     Tailwind utilities can compose alpha via rgb(var(--x) / <alpha-value>).
+   - Hex/rgb companions (--bg, --text, …) are derived from the triplets
+     so existing rules using var(--bg) automatically follow the theme.
+   - Surface tints (--surface-*, --shade-*) abstract the rgba(0,0,0)
+     and rgba(255,255,255) overlays used across the stylesheet so they
+     stay readable in both themes.
+   ─────────────────────────────────────────────────────────────── */
 
 :root {
-  --bg: #0f172a;
-  --bg-card: #1e293b;
-  --bg-card-hover: #334155;
-  --text: #e2e8f0;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  --border: #334155;
+  /* Theme tokens — dark (default) */
+  --bg-rgb: 15 23 42;
+  --bg-card-rgb: 30 41 59;
+  --bg-hover-rgb: 51 65 85;
+  --border-rgb: 51 65 85;
+  --text-main-rgb: 226 232 240;
+  --text-muted-rgb: 148 163 184;
+  --text-dim-rgb: 100 116 139;
+
+  --bg: rgb(var(--bg-rgb));
+  --bg-card: rgb(var(--bg-card-rgb));
+  --bg-card-hover: rgb(var(--bg-hover-rgb));
+  --text: rgb(var(--text-main-rgb));
+  --text-muted: rgb(var(--text-muted-rgb));
+  --text-dim: rgb(var(--text-dim-rgb));
+  --border: rgb(var(--border-rgb));
+
+  /* Accent palette — same in both themes (colors stay identifiable) */
   --primary: #3b82f6;
   --primary-light: #60a5fa;
   --green: #10b981;
   --orange: #f59e0b;
   --violet: #8b5cf6;
   --red: #ef4444;
+
+  /* Surface overlays — used in place of raw rgba(255/0,…) so they
+     stay subtle on a light background as well. */
+  --surface-1: rgba(255,255,255,0.03);
+  --surface-2: rgba(255,255,255,0.05);
+  --surface-3: rgba(255,255,255,0.08);
+  --shade-1: rgba(0,0,0,0.15);
+  --shade-2: rgba(0,0,0,0.20);
+  --shade-3: rgba(0,0,0,0.40);
+  --backdrop: rgba(0,0,0,0.6);
+
   --radius: 12px;
   --shadow: 0 4px 24px rgba(0,0,0,0.3);
+
+  color-scheme: dark;
 }
+
+[data-theme="light"] {
+  --bg-rgb: 248 250 252;        /* slate-50 */
+  --bg-card-rgb: 255 255 255;
+  --bg-hover-rgb: 241 245 249;  /* slate-100 */
+  --border-rgb: 226 232 240;    /* slate-200 */
+  --text-main-rgb: 15 23 42;    /* slate-900 */
+  --text-muted-rgb: 71 85 105;  /* slate-600 */
+  --text-dim-rgb: 100 116 139;  /* slate-500 */
+
+  /* Accent: shift to slightly darker shades for readable contrast on
+     light surfaces while keeping the same hue. */
+  --primary: #2563eb;
+  --primary-light: #1d4ed8;
+  --green: #047857;
+  --orange: #b45309;
+  --violet: #6d28d9;
+  --red: #b91c1c;
+
+  /* Inverted overlays: subtle dark tints look right on light surfaces */
+  --surface-1: rgba(15,23,42,0.025);
+  --surface-2: rgba(15,23,42,0.045);
+  --surface-3: rgba(15,23,42,0.07);
+  --shade-1: rgba(15,23,42,0.05);
+  --shade-2: rgba(15,23,42,0.08);
+  --shade-3: rgba(15,23,42,0.18);
+  --backdrop: rgba(15,23,42,0.45);
+
+  --shadow: 0 4px 24px rgba(15,23,42,0.08);
+
+  color-scheme: light;
+}
+
+/* Note on theme switching: we deliberately do NOT add a CSS transition
+   on background-color/color when --*-rgb tokens change. Chrome (and
+   other Blink browsers) does not animate properties whose value comes
+   from a var() chain when only the var content changes — the property
+   appears to "freeze" at its prior computed value mid-transition.
+   Switching themes is therefore instantaneous, which is also the
+   crisper UX on mobile. */
 
 html { scroll-behavior: smooth; }
 
@@ -620,11 +693,11 @@ html { scroll-behavior: smooth; }
 @keyframes pulse-seg { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
 .progress-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-.progress-label code { font-size: 0.78rem; color: var(--text); background: rgba(0,0,0,0.2); padding: 0.1rem 0.35rem; border-radius: 3px; }
+.progress-label code { font-size: 0.78rem; color: var(--text); background: var(--shade-2); padding: 0.1rem 0.35rem; border-radius: 3px; }
 .phase-hint { font-size: 0.78rem; color: var(--text-dim); }
 
 /* Durations */
-.dossier-durations { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.65rem; padding: 0.45rem 0.7rem; background: rgba(0,0,0,0.15); border-radius: 8px; }
+.dossier-durations { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.65rem; padding: 0.45rem 0.7rem; background: var(--shade-1); border-radius: 8px; }
 .duration-item { display: flex; flex-direction: column; }
 .duration-label { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
 .duration-value { font-size: 0.92rem; font-weight: 600; color: var(--text); }
@@ -862,7 +935,7 @@ thead th.sortable:hover { color: var(--primary-light); }
 thead th.sort-asc::after { content: ' \25B2'; font-size: 0.7em; }
 thead th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
 tbody td { padding: 0.6rem; border-bottom: 1px solid var(--border); }
-tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+tbody tr:nth-child(even) { background: var(--surface-1); }
 tbody tr:hover { background: var(--bg-card-hover); }
 td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
@@ -965,10 +1038,10 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   font-size: 0.68rem;
   color: var(--text-muted);
   font-family: 'Courier New', Courier, monospace;
-  background: rgba(255,255,255,0.05);
+  background: var(--surface-2);
   padding: 0.1rem 0.35rem;
   border-radius: 3px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--surface-3);
 }
 @media (max-width: 767px) {
   .statut-code { font-size: 0.58rem; padding: 0.05rem 0.25rem; }
@@ -996,7 +1069,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   padding: 0.5rem 0.75rem;
   border-left: 3px solid var(--primary);
   border-radius: 6px;
-  background: rgba(255,255,255,0.03);
+  background: var(--surface-1);
 }
 .mouvement-notif.mouvement-primary { border-left-color: var(--primary); }
 .mouvement-notif.mouvement-green   { border-left-color: var(--green); }
@@ -1022,7 +1095,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   justify-content: space-between;
 }
 .mouvement-clickable:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-3);
   transform: translateX(2px);
 }
 .mouvement-chevron {
@@ -1046,7 +1119,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   transition: background 0.15s;
 }
 .mouvement-dossier-item:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--surface-2);
 }
 .mouvement-dossier-item + .mouvement-dossier-item {
   border-top: 1px solid var(--border);
@@ -1062,7 +1135,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   transition: background 0.15s;
 }
 .decret-list-item:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--surface-2);
 }
 .decret-list-item + .decret-list-item {
   border-top: 1px solid var(--border);
@@ -1237,7 +1310,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
 
 /* ─── Activity clickable ──────────────────────────────────── */
 .activity-clickable { cursor: pointer; }
-.activity-clickable:hover { background: rgba(255,255,255,0.04); }
+.activity-clickable:hover { background: var(--surface-2); }
 
 /* ─── Dossier History Modal ──────────────────────────────── */
 .history-modal-overlay {
@@ -1245,7 +1318,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0,0,0,0.6);
+  background: var(--backdrop);
   backdrop-filter: blur(4px);
   align-items: center;
   justify-content: center;
@@ -1300,7 +1373,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   min-height: 0;
 }
 .history-back {
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-3);
   border: 1px solid var(--border);
   color: var(--primary-light);
   font-size: 1rem;
@@ -1398,8 +1471,8 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-muted);
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--surface-3);
+  border: 1px solid var(--surface-3);
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
 }
@@ -1493,12 +1566,12 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   text-align: center;
   padding: 0.55rem 0.35rem;
   border-radius: 10px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-3);
   transition: background 0.15s;
 }
 .duration-stat-card:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-3);
 }
 .duration-stat-value {
   font-size: 1.05rem;
@@ -1538,11 +1611,11 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s;
-  background: rgba(255,255,255,0.03);
+  background: var(--surface-1);
   border: 1px solid transparent;
 }
 .duration-list-item:hover {
-  background: rgba(255,255,255,0.07);
+  background: var(--surface-3);
   border-color: var(--border);
 }
 .duration-list-left {
@@ -1592,7 +1665,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
 .duration-list-bar-wrap {
   width: 100%;
   height: 6px;
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-3);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -1650,7 +1723,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.04);
+  background-color: var(--surface-2);
   color: var(--text);
   font-size: 0.78rem;
   cursor: pointer;
@@ -1735,7 +1808,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
 }
 
 .estimate-card {
-  background: rgba(0,0,0,0.15);
+  background: var(--shade-1);
   border-radius: 8px;
   padding: 0.85rem;
   text-align: center;
@@ -1762,13 +1835,13 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
 
 .heatmap-table { border-collapse: collapse; font-size: 0.75rem; width: 100%; }
 .heatmap-table th { padding: 0.35rem 0.4rem; font-weight: 600; color: var(--text-muted); text-align: center; white-space: nowrap; font-size: 0.75rem; }
-.heatmap-table td { padding: 0.3rem 0.4rem; text-align: center; border: 1px solid rgba(255,255,255,0.05); min-width: 38px; font-size: 0.72rem; font-weight: 500; }
+.heatmap-table td { padding: 0.3rem 0.4rem; text-align: center; border: 1px solid var(--surface-2); min-width: 38px; font-size: 0.72rem; font-weight: 500; }
 .heatmap-table td.hm-cell { transition: opacity 0.2s; }
 .heatmap-table td.hm-cell:hover { opacity: 0.8; }
 .heatmap-table .hm-label { text-align: left; color: var(--text-muted); font-weight: 500; min-width: 80px; font-size: 0.75rem; }
 
 /* Heatmap popover */
-.hm-popover { z-index: 1000; width: 220px; background: #1e2330; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.7); padding: 0.75rem; animation: modalIn 0.15s ease; position: absolute; }
+.hm-popover { z-index: 1000; width: 220px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); padding: 0.75rem; animation: modalIn 0.15s ease; position: absolute; }
 .hm-popover-header { font-weight: 700; font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.15rem; }
 .hm-popover-step { font-size: 0.75rem; color: var(--primary-light); margin-bottom: 0.6rem; }
 .hm-popover-stats { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -1776,7 +1849,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
 .hm-popover-row span { color: var(--text-muted); }
 .hm-popover-row strong { color: var(--text-light); font-weight: 600; }
 .hm-popover-link { cursor: pointer; border-radius: 4px; padding: 0.2rem 0.3rem; margin: -0.2rem -0.3rem; transition: background 0.15s; }
-.hm-popover-link:hover { background: rgba(255,255,255,0.08); }
+.hm-popover-link:hover { background: var(--surface-3); }
 .hm-hash-link { color: var(--primary-light); font-size: 0.7rem; font-weight: 500; margin-left: 0.3rem; }
 
 /* ─── Distribution Table ──────────────────────────────────── */
@@ -1809,7 +1882,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
   margin-right: 0.2rem;
   transition: transform 0.15s;
 }
-.distrib-detail td { background: rgba(255,255,255,0.02); }
+.distrib-detail td { background: var(--surface-1); }
 .distrib-detail-name {
   padding-left: 1.5rem !important;
   color: var(--text-muted);
@@ -1911,7 +1984,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
 .calendar-table td { width: 12px; height: 12px; border-radius: 2px; border: none; padding: 0; }
 .calendar-table .cal-label { font-size: 0.65rem; color: var(--text-dim); text-align: right; padding-right: 4px; width: auto; height: auto; }
 
-.cal-empty { background: rgba(255,255,255,0.03); }
+.cal-empty { background: var(--surface-1); }
 .cal-l1 { background: #0e4429; }
 .cal-l2 { background: #006d32; }
 .cal-l3 { background: #26a641; }

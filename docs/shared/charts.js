@@ -1,5 +1,9 @@
 /**
- * shared/charts.js — Chart.js helpers & dark theme
+ * shared/charts.js — Chart.js helpers & themed defaults
+ *
+ * Reads CSS variables from <html> so charts follow the active theme (dark/light).
+ * Listens to the 'anef:theme-change' event dispatched by nav.js to recolor
+ * existing chart instances on the fly.
  */
 (function() {
   'use strict';
@@ -8,25 +12,84 @@
 
   var instances = {};
 
-  /** Register dark theme defaults for Chart.js */
+  /** Read a CSS custom property from the document root. */
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function themeColors() {
+    return {
+      text:       cssVar('--text')       || '#e2e8f0',
+      textMuted:  cssVar('--text-muted') || '#94a3b8',
+      border:     cssVar('--border')     || '#334155',
+      bgCard:     cssVar('--bg-card')    || '#1e293b'
+    };
+  }
+
+  /** Apply (or re-apply) themed Chart.defaults — call after any theme change. */
   function registerDarkTheme() {
     if (typeof Chart === 'undefined') return;
+    var c = themeColors();
 
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.borderColor = '#1e293b';
+    Chart.defaults.color = c.textMuted;
+    Chart.defaults.borderColor = c.bgCard;
     Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
-    Chart.defaults.plugins.legend.labels.color = '#e2e8f0';
+    Chart.defaults.plugins.legend.labels.color = c.text;
     Chart.defaults.plugins.legend.labels.padding = 12;
-    Chart.defaults.plugins.tooltip.backgroundColor = '#1e293b';
-    Chart.defaults.plugins.tooltip.titleColor = '#e2e8f0';
-    Chart.defaults.plugins.tooltip.bodyColor = '#94a3b8';
-    Chart.defaults.plugins.tooltip.borderColor = '#334155';
+    Chart.defaults.plugins.tooltip.backgroundColor = c.bgCard;
+    Chart.defaults.plugins.tooltip.titleColor = c.text;
+    Chart.defaults.plugins.tooltip.bodyColor = c.textMuted;
+    Chart.defaults.plugins.tooltip.borderColor = c.border;
     Chart.defaults.plugins.tooltip.borderWidth = 1;
 
-    Chart.defaults.scale.grid.color = '#1e293b';
-    Chart.defaults.scale.ticks.color = '#94a3b8';
+    Chart.defaults.scale.grid.color = c.bgCard;
+    Chart.defaults.scale.ticks.color = c.textMuted;
   }
+
+  /** Walk a chart's options and replace previously-themed colors with the
+   *  current ones. Charts re-cache config at create-time, so we mutate
+   *  their options object then call .update('none') for an instant repaint. */
+  function recolorInstance(chart) {
+    var c = themeColors();
+    var opts = chart.options || {};
+
+    if (opts.plugins) {
+      if (opts.plugins.legend && opts.plugins.legend.labels) {
+        opts.plugins.legend.labels.color = c.text;
+      }
+      if (opts.plugins.tooltip) {
+        opts.plugins.tooltip.backgroundColor = c.bgCard;
+        opts.plugins.tooltip.titleColor = c.text;
+        opts.plugins.tooltip.bodyColor = c.textMuted;
+        opts.plugins.tooltip.borderColor = c.border;
+      }
+      if (opts.plugins.datalabels && typeof opts.plugins.datalabels === 'object'
+          && opts.plugins.datalabels.color) {
+        opts.plugins.datalabels.color = c.text;
+      }
+    }
+    if (opts.scales) {
+      Object.keys(opts.scales).forEach(function(k) {
+        var s = opts.scales[k];
+        if (!s) return;
+        if (s.ticks) s.ticks.color = c.textMuted;
+        if (s.grid) s.grid.color = c.bgCard;
+      });
+    }
+    chart.update('none');
+  }
+
+  // Recolor on theme change. Uses a microtask so the CSS variables on
+  // <html> are guaranteed up-to-date before we read them.
+  document.addEventListener('anef:theme-change', function() {
+    setTimeout(function() {
+      registerDarkTheme();
+      Object.keys(instances).forEach(function(name) {
+        try { recolorInstance(instances[name]); } catch (e) {}
+      });
+    }, 0);
+  });
 
   /** Create (or replace) a named chart */
   function createChart(name, canvasId, config) {
@@ -62,13 +125,14 @@
 
   /** Doughnut chart config helper */
   function doughnutConfig(labels, values, colors) {
+    var c = themeColors();
     return {
       type: 'doughnut',
       data: {
         labels: labels,
         datasets: [{
           data: values,
-          backgroundColor: colors.map(function(c) { return c + 'cc'; }),
+          backgroundColor: colors.map(function(col) { return col + 'cc'; }),
           borderColor: colors,
           borderWidth: 2,
           hoverOffset: 8
@@ -80,7 +144,7 @@
         plugins: {
           legend: {
             position: 'right',
-            labels: { color: '#e2e8f0', font: { size: 11 }, padding: 12 }
+            labels: { color: c.text, font: { size: 11 }, padding: 12 }
           },
           tooltip: {
             callbacks: {
@@ -99,6 +163,7 @@
   /** Horizontal bar config helper */
   function horizontalBarConfig(labels, values, colors, opts) {
     opts = opts || {};
+    var c = themeColors();
     return {
       type: 'bar',
       data: {
@@ -106,7 +171,7 @@
         datasets: [{
           label: opts.label || '',
           data: values,
-          backgroundColor: typeof colors === 'string' ? colors : colors.map(function(c) { return c + '99'; }),
+          backgroundColor: typeof colors === 'string' ? colors : colors.map(function(col) { return col + '99'; }),
           borderColor: typeof colors === 'string' ? colors : colors,
           borderWidth: 1,
           borderRadius: 4
@@ -122,11 +187,11 @@
         },
         scales: {
           x: {
-            ticks: { color: '#94a3b8', callback: function(v) { return v + (opts.suffix || ''); } },
-            grid: { color: '#1e293b' }
+            ticks: { color: c.textMuted, callback: function(v) { return v + (opts.suffix || ''); } },
+            grid: { color: c.bgCard }
           },
           y: {
-            ticks: { color: '#94a3b8', font: { size: 11 } },
+            ticks: { color: c.textMuted, font: { size: 11 } },
             grid: { display: false }
           }
         }
@@ -137,6 +202,7 @@
   /** Line chart config helper */
   function lineConfig(labels, datasets, opts) {
     opts = opts || {};
+    var c = themeColors();
     return {
       type: 'line',
       data: {
@@ -148,17 +214,17 @@
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { labels: { color: '#e2e8f0' } },
+          legend: { labels: { color: c.text } },
           datalabels: false
         },
         scales: {
           x: {
-            ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 },
-            grid: { color: '#1e293b' }
+            ticks: { color: c.textMuted, font: { size: 10 }, maxRotation: 45 },
+            grid: { color: c.bgCard }
           },
           y: {
-            ticks: { color: '#94a3b8', callback: function(v) { return v + (opts.ySuffix || ''); } },
-            grid: { color: '#1e293b' },
+            ticks: { color: c.textMuted, callback: function(v) { return v + (opts.ySuffix || ''); } },
+            grid: { color: c.bgCard },
             beginAtZero: opts.beginAtZero !== false
           }
         }
@@ -169,6 +235,7 @@
   /** Bar chart config helper */
   function barConfig(labels, datasets, opts) {
     opts = opts || {};
+    var c = themeColors();
     var plugins = [];
     if (typeof ChartDataLabels !== 'undefined' && opts.datalabels !== false) plugins.push(ChartDataLabels);
 
@@ -183,9 +250,9 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: '#e2e8f0' } },
+          legend: { labels: { color: c.text } },
           datalabels: opts.datalabels || {
-            color: '#e2e8f0',
+            color: c.text,
             font: { size: 10, weight: 'bold' },
             anchor: 'end',
             align: 'top',
@@ -201,13 +268,13 @@
         },
         scales: {
           x: {
-            ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 },
-            grid: { color: '#1e293b' },
+            ticks: { color: c.textMuted, font: { size: 10 }, maxRotation: 45 },
+            grid: { color: c.bgCard },
             stacked: opts.stacked || false
           },
           y: {
-            ticks: { color: '#94a3b8', callback: function(v) { return v + (opts.ySuffix || ''); } },
-            grid: { color: '#1e293b' },
+            ticks: { color: c.textMuted, callback: function(v) { return v + (opts.ySuffix || ''); } },
+            grid: { color: c.bgCard },
             stacked: opts.stacked || false,
             beginAtZero: true
           }

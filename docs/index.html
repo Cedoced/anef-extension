@@ -17,6 +17,18 @@
   <meta name="twitter:title" content="ANEF Stats — Suivi naturalisation française">
   <meta name="twitter:description" content="Statistiques communautaires sur les délais de naturalisation française en temps réel.">
   <link rel="canonical" href="https://letranger-dev.github.io/anef-extension/">
+  <script>
+    /* Apply theme before first paint to avoid flash. Reads localStorage
+       then falls back to OS preference. Failures are silent (private mode). */
+    (function () {
+      try {
+        var saved = localStorage.getItem('anef-theme');
+        var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var theme = saved || (prefersLight ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="shared/common.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -24,13 +36,16 @@
       theme: {
         extend: {
           colors: {
-            bg: '#0f172a',
-            'bg-card': '#1e293b',
-            'bg-hover': '#334155',
-            border: '#334155',
-            'text-main': '#e2e8f0',
-            'text-muted': '#94a3b8',
-            'text-dim': '#64748b',
+            // Themed tokens — resolve to CSS vars so utilities follow data-theme.
+            // <alpha-value> placeholder lets utilities like bg-bg-card/95 work.
+            bg: 'rgb(var(--bg-rgb) / <alpha-value>)',
+            'bg-card': 'rgb(var(--bg-card-rgb) / <alpha-value>)',
+            'bg-hover': 'rgb(var(--bg-hover-rgb) / <alpha-value>)',
+            border: 'rgb(var(--border-rgb) / <alpha-value>)',
+            'text-main': 'rgb(var(--text-main-rgb) / <alpha-value>)',
+            'text-muted': 'rgb(var(--text-muted-rgb) / <alpha-value>)',
+            'text-dim': 'rgb(var(--text-dim-rgb) / <alpha-value>)',
+            // Accent palette — kept as static hex (same hue both themes)
             primary: '#3b82f6',
             'primary-light': '#60a5fa',
             success: '#10b981',
