@@ -96,10 +96,39 @@
   // Étape 1 : Page ANEF - Cliquer sur "Se connecter"
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Localise le bouton "Se connecter" quel que soit le design du site.
+   * - DSFR (nouveau, /usagers/) : <dsfr-button><button class="fr-btn">
+   * - PrimeNG (ancien) : <p-button class="fullWidthButton"><button>
+   * On filtre par texte pour éviter de cliquer "Créer un compte" et on
+   * ignore le lien "Se connecter" de l'en-tête au profit du bouton principal.
+   */
+  function findSeConnecterButton() {
+    const isSeConnecter = (el) => /se\s*connecter/i.test((el.textContent || '').trim());
+
+    // 1. Composant de bouton explicite (DSFR ou PrimeNG)
+    const comp = Array.from(
+      document.querySelectorAll('dsfr-button button, p-button.fullWidthButton button')
+    ).find(isSeConnecter);
+    if (comp) return comp;
+
+    // 2. Repli : n'importe quel bouton/lien dont le texte est "Se connecter"
+    const candidates = Array.from(document.querySelectorAll('button, a.fr-btn'));
+    return candidates.find(
+      (el) => (el.textContent || '').trim().toLowerCase() === 'se connecter'
+    ) || null;
+  }
+
   async function clickSeConnecter() {
     log('📍 Page ANEF détectée');
 
-    const btn = await waitForElement('p-button.fullWidthButton button', 10000);
+    // Attendre qu'un bouton de connexion soit rendu (DSFR ou PrimeNG)
+    await waitForElement(
+      'dsfr-button button, p-button.fullWidthButton button, a.fr-btn',
+      10000
+    );
+
+    const btn = findSeConnecterButton();
 
     if (!btn) {
       log('❌ Bouton "Se connecter" non trouvé');

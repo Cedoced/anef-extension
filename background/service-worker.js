@@ -691,8 +691,8 @@ async function getStatusForPopup() {
 /** Ouvre une page ANEF */
 async function openAnefPage(page) {
   const routes = {
-    'login': '/#/espace-personnel/connexion-inscription',
-    'mon-compte': '/#/espace-personnel/mon-compte'
+    'login': '/usagers/#/espace-personnel/connexion-inscription',
+    'mon-compte': '/usagers/#/espace-personnel/mon-compte'
   };
 
   const url = ANEF_BASE_URL + (routes[page] || routes['mon-compte']);

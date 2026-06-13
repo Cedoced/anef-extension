@@ -303,7 +303,7 @@
   /** Redirige vers mon-compte si on est sur la page d'accueil après login */
   function checkAndRedirectToMonCompte() {
     const url = window.location.href;
-    const isHomepage = url.endsWith('/#/') || url.endsWith('/#') || url.match(/particuliers\/#\/?$/);
+    const isHomepage = url.endsWith('/#/') || url.endsWith('/#') || url.match(/\/(particuliers|usagers)\/#\/?$/);
 
     if (!isHomepage) return;
 
@@ -315,7 +315,10 @@
 
     if (cameFromLogin) {
       logger.info('🏠 Page d\'accueil après login, redirection vers mon-compte...');
-      window.location.href = 'https://administration-etrangers-en-france.interieur.gouv.fr/particuliers/#/espace-personnel/mon-compte';
+      // Conserver le segment d'app courant (/usagers/ aujourd'hui, /particuliers/ autrefois)
+      const m = window.location.href.match(/^(https?:\/\/[^/]+\/[^/]+)\/#/);
+      const appBase = m ? m[1] : 'https://administration-etrangers-en-france.interieur.gouv.fr/usagers';
+      window.location.href = appBase + '/#/espace-personnel/mon-compte';
     }
   }
 

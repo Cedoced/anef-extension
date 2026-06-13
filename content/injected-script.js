@@ -401,7 +401,7 @@ QJNdXtE3G7SjkDOn36yZSaXp
         if (tab) {
           resolve(tab);
         } else {
-          const allTabs = document.querySelectorAll('a[role="tab"], li[role="presentation"] a, .p-tabview-nav a, .p-tabview-nav li, [role="tablist"] a, [role="tablist"] li');
+          const allTabs = document.querySelectorAll(TAB_SELECTOR);
           const allLinks = document.querySelectorAll('a');
           const tabTexts = Array.from(allTabs).map(el => '"' + (el.textContent || '').trim().substring(0, 40) + '"');
           log('❌ Timeout: onglet non trouvé après ' + MAX_WAIT / 1000 + 's. DOM tabs: ' + allTabs.length + ' [' + tabTexts.join(', ') + ']. Total links: ' + allLinks.length + '. Body length: ' + (document.body?.innerHTML?.length || 0));
@@ -413,8 +413,14 @@ QJNdXtE3G7SjkDOn36yZSaXp
 
   let _tabsLoggedOnce = false;
 
+  // Sélecteur des onglets — couvre le nouveau design DSFR (button.fr-tabs__tab)
+  // et l'ancien design PrimeNG (.p-tabview-nav) en repli.
+  const TAB_SELECTOR = 'button[role="tab"], a[role="tab"], .fr-tabs__tab, ' +
+    '.fr-tabs__list button, .fr-tabs__list li, li[role="presentation"] a, ' +
+    '.p-tabview-nav a, .p-tabview-nav li, [role="tablist"] a, [role="tablist"] li';
+
   function findNationalityTab() {
-    const tabs = document.querySelectorAll('a[role="tab"], li[role="presentation"] a, .p-tabview-nav a, .p-tabview-nav li, [role="tablist"] a, [role="tablist"] li');
+    const tabs = document.querySelectorAll(TAB_SELECTOR);
     if (tabs.length > 0 && !_tabsLoggedOnce) {
       _tabsLoggedOnce = true;
       log('🔍 Onglets DOM trouvés: ' + tabs.length + ' — textes: ' + Array.from(tabs).map(el => '"' + (el.textContent || '').trim().substring(0, 40) + '"').join(', '));
@@ -463,11 +469,17 @@ QJNdXtE3G7SjkDOn36yZSaXp
 
   function isTabContentLoaded() {
     const activeTab = document.querySelector(
+      // DSFR (nouveau)
+      'button[role="tab"][aria-selected="true"], .fr-tabs__tab[aria-selected="true"], ' +
+      // PrimeNG (ancien)
       'a[role="tab"].p-tabview-nav-link-active, ' +
       '.p-tabview-nav-link.p-highlight, ' +
       'li.p-highlight a[role="tab"]'
     );
     const hasContent = document.querySelector(
+      // DSFR (nouveau)
+      '.fr-tabs__panel, [role="tabpanel"], ' +
+      // PrimeNG (ancien) + génériques
       '.dossier-card, [class*="statut"], [class*="dossier"], ' +
       '.p-tabview-panel:not(.p-hidden), .p-card-body'
     );
