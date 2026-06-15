@@ -421,14 +421,22 @@ QJNdXtE3G7SjkDOn36yZSaXp
 
   // Le portail ANEF est multilingue : le libellé de l'onglet dépend de la langue
   // choisie par l'usager (FR « Nationalité Française », EN « French Nationality
-  // application », …). On matche donc sur la racine « national » insensible à la
+  // application », …). On matche donc le mot « nationalit{é|y} » insensible à la
   // casse et aux accents, ce qui couvre le français comme l'anglais sans lister
   // chaque locale. Sans ça, un usager en anglais ne trouve jamais l'onglet, le
   // fetch expire et l'extension conclut à tort « Site en maintenance ».
+  //
+  // On exige la racine « nationalit » précédée d'une frontière de mot, et non le
+  // simple radical « national » : ce dernier matcherait « International… » (et
+  // comme ce matcher est l'unique garde avant le fetch, un faux positif
+  // contournerait la voie d'échec `no_nationality_tab` et ferait passer un
+  // dossier non concerné pour une naturalisation). « International » ne contient
+  // pas « nationalit », il est donc bien exclu.
   const _normalize = (s) => (s || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '') // enlève les accents
     .toLowerCase();
-  const _matchesNationality = (s) => _normalize(s).includes('national');
+  const _NATIONALITY_RE = /\bnationalit[ey]/; // FR « nationalité »→nationalite, EN « nationality »
+  const _matchesNationality = (s) => _NATIONALITY_RE.test(_normalize(s));
 
   function findNationalityTab() {
     const tabs = document.querySelectorAll(TAB_SELECTOR);
