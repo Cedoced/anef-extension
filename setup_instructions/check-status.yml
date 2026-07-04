@@ -1,0 +1,53 @@
+name: ANEF Status Check
+
+on:
+  # Exécution programmée : 8h et 19h heure de Paris
+  # Paris = UTC+2 (été CEST) → 06:00 et 17:00 UTC
+  schedule:
+    - cron: '0 6 * * *'   # 08h00 Paris
+    - cron: '0 17 * * *'  # 19h00 Paris
+
+  # Exécution manuelle depuis l'interface GitHub
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Pour commiter data/status.json
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: tracker/requirements.txt
+
+      - name: 📦 Install dependencies
+        run: pip install -r tracker/requirements.txt
+
+      - name: 🔍 Check ANEF status
+        id: check
+        env:
+          ANEF_USERNAME: ${{ secrets.ANEF_USERNAME }}
+          ANEF_PASSWORD: ${{ secrets.ANEF_PASSWORD }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          BREVO_RECIPIENT_EMAIL: ${{ secrets.BREVO_RECIPIENT_EMAIL }}
+        run: python tracker/check_status.py
+
+      - name: 💾 Commit status update
+        run: |
+          git config user.name "ANEF Tracker Bot"
+          git config user.email "anef-tracker[bot]@users.noreply.github.com"
+          git add data/status.json
+          git diff --staged --quiet || git commit -m "📊 Status check: ${{ steps.check.outputs.phase }} (${{ steps.check.outputs.step }}/12) [changed=${{ steps.check.outputs.changed }}]"
+          git push
