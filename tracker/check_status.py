@@ -214,7 +214,7 @@ def anef_login(username: str, password: str) -> requests.Session:
 # Déchiffrement RSA
 # ─────────────────────────────────────────────────────────────
 
-def decrypt_status(encrypted_b64: str) -> tuple[str, str | None]:
+def decrypt_status(encrypted_b64: str) -> tuple:
     """Déchiffre le statut RSA-OAEP SHA-256. Retourne (code, date)."""
     key = serialization.load_pem_private_key(PRIVATE_KEY_PEM, password=None)
     raw = key.decrypt(
