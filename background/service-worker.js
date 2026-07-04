@@ -10,7 +10,7 @@
 
 import * as storage from '../lib/storage.js';
 import { getStatusExplanation, isPositiveStatus, isNegativeStatus, getStepColor, formatTimestamp, formatSubStep } from '../lib/status-parser.js';
-import { ANEF_BASE_URL, ANEF_ROUTES, URLPatterns, LogConfig } from '../lib/constants.js';
+import { ANEF_BASE_URL, ANEF_ROUTES, URLPatterns, LogConfig, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID } from '../lib/constants.js';
 import { sendAnonymousStats, sendManualStepDates, rehydrateLocalHistoryFromServer } from '../lib/anonymous-stats.js';
 
 // ─────────────────────────────────────────────────────────────
@@ -398,6 +398,7 @@ async function handleDossierData(data) {
       // Changement de statut sur le primaire → notification standard
       logger.info('🔔 Changement de statut détecté !', { nouveau: data.statut });
       await sendStatusChangeNotification(data);
+      await sendTelegramMessage(data, prevStatus);
     }
 
     // Mettre à jour le badge seulement pour le primaire (ou premier dossier)
@@ -603,6 +604,60 @@ async function sendStatusChangeNotification(data) {
     logger.info('Notification envoyée:', notifId);
   } catch (error) {
     logger.error('Erreur notification:', error.message);
+  }
+}
+
+/** Envoie un message Telegram en cas de changement de statut */
+async function sendTelegramMessage(data, prevStatus) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+
+  const info = getStatusExplanation(data.statut);
+  const sub = info.rang > 0 ? formatSubStep(info.rang) : '?';
+  
+  let title = '🔔 Changement de statut ANEF !';
+  if (info.etape >= 10) title = '🎉 BONNE NOUVELLE ANEF !';
+
+  const now = formatTimestamp();
+  let bar = "";
+  for (let i = 1; i <= 12; i++) {
+    if (i < info.etape) bar += "█";
+    else if (i === info.etape) bar += "▓";
+    else bar += "░";
+  }
+
+  let text = `<b>${title}</b>\n\n`;
+  text += `${info.icon || '📋'} <b>${info.phase}</b>\n`;
+  text += `${info.explication}\n\n`;
+  text += `📊 Étape <b>${sub}</b> / 12\n`;
+  text += `<code>${bar}</code>\n\n`;
+  
+  if (info.description) {
+    text += `📝 ${info.description}\n\n`;
+  }
+
+  if (prevStatus) {
+    const prevInfo = getStatusExplanation(prevStatus.statut);
+    const prevSub = prevInfo.rang > 0 ? formatSubStep(prevInfo.rang) : '?';
+    text += `🔄 <i>Avant : ${prevSub} — ${prevInfo.explication}</i>\n\n`;
+  }
+
+  text += `🕐 ${now}`;
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: 'HTML'
+      })
+    });
+    
+    if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
+    logger.info('📱 Telegram envoyé avec succès !');
+  } catch (e) {
+    logger.error('❌ Erreur envoi Telegram:', e.message);
   }
 }
 
