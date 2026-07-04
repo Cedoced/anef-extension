@@ -260,7 +260,7 @@ def save_state(state: dict):
 # Notifications
 # ─────────────────────────────────────────────────────────────
 
-def build_message(info: dict, prev_code: str | None, is_change: bool, date_statut: str) -> dict:
+def build_message(info: dict, prev_code, is_change: bool, date_statut: str) -> dict:
     """Construit les messages de notification."""
     now = datetime.now(TZ_PARIS).strftime('%d/%m/%Y %H:%M')
 
